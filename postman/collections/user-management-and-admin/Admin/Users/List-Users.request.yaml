@@ -1,0 +1,30 @@
+﻿$kind: http-request
+name: List Users
+method: GET
+url: '{{base_url}}/admin/users'
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{auth_token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      var json = pm.response.json();
+      var users = Array.isArray(json) ? json : json.data;
+      pm.test("Response is array or has data array", function () {
+        pm.expect(users).to.be.an("array");
+      });
+      pm.test("Each user has id, name, email, and role", function () {
+        users.forEach(function (user) {
+          pm.expect(user.id).to.exist;
+          pm.expect(user.name).to.exist;
+          pm.expect(user.email).to.exist;
+          pm.expect(user.role).to.exist;
+        });
+      });

@@ -1,0 +1,37 @@
+﻿$kind: http-request
+name: Register
+method: POST
+url: '{{base_url}}/register'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Test User",
+      "email": "testuser@example.com",
+      "password": "password123"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      pm.test("Response time is under 2000ms", function () {
+        pm.expect(pm.response.responseTime).to.be.below(2000);
+      });
+      var json = pm.response.json();
+      pm.test("access_token exists and is a string", function () {
+        pm.expect(json.access_token).to.be.a("string");
+      });
+      pm.test("user object has correct email", function () {
+        pm.expect(json.user.email).to.eql("testuser@example.com");
+      });
+      pm.test("user object has role", function () {
+        pm.expect(json.user.role).to.exist;
+      });
+      pm.collectionVariables.set("auth_token", json.access_token);
