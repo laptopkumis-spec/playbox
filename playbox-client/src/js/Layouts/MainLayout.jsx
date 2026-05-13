@@ -1,17 +1,23 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../api/axios';
 
 export default function MainLayout() {
     const navigate = useNavigate();
     const location = useLocation();
-    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || 'null');
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
+    const handleLogout = async () => {
+        try {
+            await api.post('/logout');
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
     };
 
     // Determine which nav links to show based on role
@@ -29,6 +35,8 @@ export default function MainLayout() {
         { path: '/login', label: 'Login' },
         { path: '/register', label: 'Register' }
     ] : [];
+
+    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
     return (
         <div className="flex flex-col min-h-screen text-white font-sans selection:bg-purple-500 selection:text-white relative">
@@ -48,16 +56,17 @@ export default function MainLayout() {
                 <div className="shooting-star"></div>
             </div>
 
-            <nav className="glass-nav text-gray-100 shadow-xl sticky top-0 z-50">
+            <nav className="glass-nav text-gray-100 shadow-xl sticky top-0 z-[60]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
                         <div className="flex-shrink-0 flex items-center">
-                            <Link to="/" className="text-3xl font-black tracking-tighter text-playbox drop-shadow-sm">
+                            <Link to="/" className="text-2xl sm:text-3xl font-black tracking-tighter text-playbox drop-shadow-sm">
                                 PLAYBOX
                             </Link>
                         </div>
-                        <div className="hidden sm:flex items-center space-x-2">
-                            {/* Animated Nav Links */}
+
+                        {/* Desktop Navigation */}
+                        <div className="hidden md:flex items-center space-x-2">
                             {navLinks.map((link) => {
                                 const isActive = location.pathname === link.path;
                                 return (
@@ -77,7 +86,7 @@ export default function MainLayout() {
                             {user ? (
                                 <div className="flex items-center space-x-4 ml-4 pl-4 border-l border-white/10">
                                     <span className="text-sm font-medium text-gray-300">Hi, {user.name}</span>
-                                    <button onClick={handleLogout} className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors">Logout</button>
+                                    <button onClick={handleLogout} className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors cursor-pointer">Logout</button>
                                 </div>
                             ) : (
                                 <div className="flex items-center space-x-2 ml-4 pl-4 border-l border-white/10">
@@ -99,8 +108,76 @@ export default function MainLayout() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Mobile Menu Button */}
+                        <div className="flex md:hidden">
+                            <button
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-300 hover:text-white transition-all"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {isMenuOpen ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l18 18" />
+                                    ) : (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    )}
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                {/* Mobile Navigation Drawer */}
+                <AnimatePresence>
+                    {isMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="md:hidden border-t border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden"
+                        >
+                            <div className="px-4 py-6 space-y-3">
+                                {navLinks.map((link) => (
+                                    <Link
+                                        key={link.path}
+                                        to={link.path}
+                                        onClick={() => setIsMenuOpen(false)}
+                                        className={`block px-4 py-3 rounded-xl font-bold transition-all ${location.pathname === link.path ? 'bg-purple-700 text-white shadow-lg shadow-purple-900/20' : 'text-gray-400 hover:bg-white/5'}`}
+                                    >
+                                        {link.label}
+                                    </Link>
+                                ))}
+                                
+                                <div className="pt-4 border-t border-white/10">
+                                    {user ? (
+                                        <div className="space-y-3">
+                                            <div className="px-4 text-sm text-gray-500">Logged in as <span className="text-white font-bold">{user.name}</span></div>
+                                            <button
+                                                onClick={() => { handleLogout(); setIsMenuOpen(false); }}
+                                                className="w-full text-left px-4 py-3 rounded-xl font-bold text-red-400 hover:bg-red-500/10 transition-all"
+                                            >
+                                                Logout
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {authLinks.map((link) => (
+                                                <Link
+                                                    key={link.path}
+                                                    to={link.path}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                    className={`text-center px-4 py-3 rounded-xl font-bold transition-all ${location.pathname === link.path ? 'bg-purple-900/50 text-white' : 'bg-white/5 text-gray-300'}`}
+                                                >
+                                                    {link.label}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </nav>
 
             {/* Main Content Area - flex-grow pushes footer down */}
