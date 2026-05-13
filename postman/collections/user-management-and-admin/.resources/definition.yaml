@@ -1,9 +1,0 @@
-$kind: collection
-name: 'User Management & Admin'
-variables:
-  - key: base_url
-    value: 'http://localhost:8000/api'
-  - key: auth_token
-    value: ''
-  - key: user_id
-    value: ''

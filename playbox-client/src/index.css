@@ -1,0 +1,179 @@
+@import "tailwindcss";
+
+:root {
+    --primary-blue: #1a3a5f;
+    --primary-purple: #7c3aed;
+    --milky-way-dark: #0a0b1e;
+}
+
+body {
+    background-color: var(--milky-way-dark) !important;
+    color: #f8fafc;
+    overflow-x: hidden;
+    margin: 0;
+}
+
+/* MILKY WAY BACKGROUND SYSTEM */
+.milky-way-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at bottom, #1b2735 0%, #090a0f 100%);
+    overflow: hidden;
+    z-index: -10;
+    pointer-events: none;
+}
+
+/* Nebula Clouds */
+.milky-way-container::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(26, 58, 95, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(124, 58, 237, 0.08) 0%, transparent 40%);
+    filter: blur(60px);
+    z-index: 2;
+    animation: nebula-float 100s ease-in-out infinite alternate;
+}
+
+/* Static Star Background - Much Denser */
+.stars {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    background-image:
+        radial-gradient(1px 1px at 25px 35px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 50px 100px, #fff, transparent),
+        radial-gradient(2px 2px at 125px 50px, #fff, transparent),
+        radial-gradient(1px 1px at 150px 150px, #eee, transparent),
+        radial-gradient(1.5px 1.5px at 200px 80px, #fff, transparent),
+        radial-gradient(2px 2px at 250px 250px, #ddd, transparent),
+        radial-gradient(1px 1px at 300px 150px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 350px 50px, #fff, transparent),
+        radial-gradient(1px 1px at 20px 200px, #fff, transparent),
+        radial-gradient(2px 2px at 80px 300px, #eee, transparent),
+        radial-gradient(1px 1px at 350px 350px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 10px 380px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 380px 20px, #fff, transparent),
+        radial-gradient(1px 1px at 180px 320px, #fff, transparent),
+        radial-gradient(2px 2px at 280px 120px, #fff, transparent),
+        radial-gradient(1px 1px at 45px 165px, #fff, transparent);
+    background-size: 400px 400px;
+    opacity: 0.8;
+    z-index: 1;
+}
+
+.twinkling {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    background-image:
+        radial-gradient(1.5px 1.5px at 100px 100px, #fff, transparent),
+        radial-gradient(2px 2px at 300px 300px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 500px 150px, #fff, transparent),
+        radial-gradient(2px 2px at 200px 400px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 400px 500px, #fff, transparent);
+    background-size: 500px 500px;
+    z-index: 1;
+    animation: twinkle 4s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+    0% { opacity: 0.2; transform: scale(0.9); }
+    50% { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 0.3; transform: scale(0.95); }
+}
+
+/* SHOOTING STAR EFFECT */
+.shooting-star {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1), 0 0 0 8px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 1);
+    animation: shooting 3s linear infinite;
+    opacity: 0;
+    z-index: -1;
+}
+
+.shooting-star::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 300px;
+    height: 1px;
+    background: linear-gradient(90deg, #fff, transparent);
+    z-index: -1;
+}
+
+@keyframes shooting {
+    0% { transform: rotate(315deg) translateX(0); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; }
+}
+
+/* Variation for shooting stars */
+.shooting-star:nth-child(1) { top: 0; right: 0; left: initial; animation-delay: 0s; animation-duration: 1s; z-index: -1; }
+.shooting-star:nth-child(2) { top: 0; right: 80px; left: initial; animation-delay: 0.2s; animation-duration: 3s; z-index: -1; }
+.shooting-star:nth-child(3) { top: 80px; right: 0px; left: initial; animation-delay: 0.4s; animation-duration: 2s; z-index: -1; }
+.shooting-star:nth-child(4) { top: 0; right: 180px; left: initial; animation-delay: 0.6s; animation-duration: 1.5s; z-index: -1; }
+.shooting-star:nth-child(5) { top: 0; right: 400px; left: initial; animation-delay: 0.8s; animation-duration: 2.5s; z-index: -1; }
+.shooting-star:nth-child(6) { top: 0; right: 600px; left: initial; animation-delay: 1s; animation-duration: 3s; z-index: -1; }
+.shooting-star:nth-child(7) { top: 300px; right: 0px; left: initial; animation-delay: 1.2s; animation-duration: 1.75s; z-index: -1; }
+.shooting-star:nth-child(8) { top: 0px; right: 700px; left: initial; animation-delay: 1.4s; animation-duration: 1.25s; z-index: -1; }
+.shooting-star:nth-child(9) { top: 0px; right: 1000px; left: initial; animation-delay: 0.75s; animation-duration: 2.25s; z-index: -1; }
+.shooting-star:nth-child(10) { top: 0px; right: 450px; left: initial; animation-delay: 2.75s; animation-duration: 2.25s; z-index: -1; }
+
+/* ANIMATIONS */
+@keyframes nebula-float {
+    0% { transform: translate(-5%, -5%) scale(1); }
+    100% { transform: translate(5%, 5%) scale(1.2); }
+}
+
+/* Glassmorphism for cards */
+.glass-card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 24px !important;
+}
+
+.glass-nav {
+    background: rgba(10, 11, 30, 0.7) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.text-playbox {
+    background: linear-gradient(135deg, #c084fc 0%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 900;
+}
+
+/* Utility overrides */
+.bg-white { background-color: transparent !important; }
+.text-gray-900 { color: #ffffff !important; }
+.text-gray-600, .text-gray-500, .text-gray-400 { color: #94a3b8 !important; }
+.bg-gray-50 { background-color: transparent !important; }
+.border-gray-100, .border-gray-200 { border-color: rgba(255, 255, 255, 0.1) !important; }
