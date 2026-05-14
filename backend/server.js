@@ -15,6 +15,7 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
+app.get('/api/ping', (req, res) => res.json({ message: 'pong', env: process.env.VITE_API_BASE_URL }));
 app.use('/api', authRoutes);
 app.use('/api', bookingRoutes);
 app.use('/api/admin', adminRoutes);
