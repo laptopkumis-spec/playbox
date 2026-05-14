@@ -15,10 +15,10 @@ export default function ForgotPassword() {
         setError('');
         setMessage('');
         try {
-            await axios.post('/api/reset-password', { 
-                email, 
-                new_password: newPassword, 
-                new_password_confirmation: newPasswordConfirm 
+            await axios.post('/api/reset-password', {
+                email,
+                new_password: newPassword,
+                new_password_confirmation: newPasswordConfirm
             });
             setMessage('Penggantian password berhasil! Mengalihkan ke halaman login...');
             setTimeout(() => {
@@ -34,10 +34,10 @@ export default function ForgotPassword() {
             <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
                 <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-4">Lupa Sandi</h2>
                 <p className="text-sm text-gray-500 text-center mb-6">Masukkan email yang terdaftar dan buat password baru Anda di bawah ini.</p>
-                
+
                 {message && <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-4 text-sm font-medium">{message}</div>}
                 {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>}
-                
+
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -61,9 +61,9 @@ export default function ForgotPassword() {
                         Simpan Sandi Baru
                     </button>
                 </form>
-                
+
                 <div className="mt-6 text-center text-sm">
-                    <Link to="/login" className="text-purple-700 font-bold hover:underline">Kembali ke Login</Link>
+                    <Link to="/login" className="text-purple-700 font-bold hover:underline">Kembali ke Halaman Login</Link>
                 </div>
             </div>
         </div>
