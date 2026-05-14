@@ -20,6 +20,10 @@ app.use('/api', authRoutes);
 app.use('/api', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Route not found in Express', path: req.path, originalUrl: req.originalUrl });
+});
+
 // Basic error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

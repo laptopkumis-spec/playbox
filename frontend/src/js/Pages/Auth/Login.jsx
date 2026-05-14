@@ -19,7 +19,7 @@ export default function Login() {
             localStorage.setItem('user', JSON.stringify(response.data.user));
             window.location.href = '/';
         } catch (err) {
-            setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+            setError(err.response?.data?.message || err.response?.data?.error || 'Login failed. Please check your credentials.');
         }
     };
 
