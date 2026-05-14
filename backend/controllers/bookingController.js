@@ -79,13 +79,13 @@ exports.store = async (req, res) => {
     }
 
     // This is simplified. In a real app you'd calculate price based on duration and unit price.
-    const [units] = await pool.query('SELECT price_per_hour FROM units WHERE id = ?', [unit_id]);
+    const [units] = await pool.query('SELECT hourly_rate FROM units WHERE id = ?', [unit_id]);
     if (units.length === 0) return res.status(404).json({ message: 'Unit not found' });
     
     const start = new Date(start_time);
     const end = new Date(end_time);
     const hours = Math.abs(end - start) / 36e5;
-    const totalPrice = units[0].price_per_hour * hours;
+    const totalPrice = units[0].hourly_rate * hours;
 
     const [result] = await pool.query(
       `INSERT INTO bookings (user_id, unit_id, start_time, end_time, total_price, status) VALUES (?, ?, ?, ?, ?, ?)`,
