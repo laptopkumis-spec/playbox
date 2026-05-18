@@ -23,27 +23,29 @@ export default function Register() {
                 navigate('/login');
             }, 2000);
         } catch (err) {
+            const data = err.response?.data;
             if (err.response?.status === 422) {
-                setErrors(err.response.data.errors || {});
-                setError('Registration failed. Please check your inputs.');
+                setErrors(data?.errors || {});
+                setError(data?.message || 'Registration failed. Please check your inputs.');
             } else {
-                setError(err.response?.data?.message || 'Registration failed. Please check your inputs.');
+                const detailedError = data?.error ? `${data.message}: ${data.error}` : (data?.message || 'Registration failed. Please check your inputs.');
+                setError(detailedError);
             }
         }
     };
 
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-80px)] py-8 px-4 sm:py-16">
-            <div className="w-full max-w-md glass-card p-6 sm:p-10 shadow-2xl transition-all duration-300">
+            <div className="w-full max-w-md glass-card p-6 sm:p-10 shadow-2xl">
                 <h2 className="text-3xl sm:text-4xl font-black text-white text-center mb-8 tracking-tight">Daftar <span className="text-playbox">Playbox</span></h2>
-                
+
                 {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm flex items-center gap-3">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                     {error}
                 </div>}
-                
+
                 {success && <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-4 rounded-xl mb-6 text-sm font-medium flex items-center gap-3">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -56,15 +58,15 @@ export default function Register() {
                         <label className="text-sm font-medium text-gray-400 mb-2 px-1">Nama Lengkap</label>
                         <input type="text" required value={name} onChange={e => setName(e.target.value)}
                             className={`w-full px-4 py-3.5 bg-white/5 border ${errors.name ? 'border-red-500/50' : 'border-white/10'} rounded-xl focus:ring-2 focus:ring-purple-500 text-white transition-all outline-none`}
-                            placeholder="John Doe" />
+                            placeholder="Nama Anda" />
                         {errors.name && <p className="text-red-400 text-xs mt-1.5 px-1">{errors.name[0]}</p>}
                     </div>
-                    
+
                     <div className="flex flex-col">
                         <label className="text-sm font-medium text-gray-400 mb-2 px-1">Email</label>
                         <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
                             className={`w-full px-4 py-3.5 bg-white/5 border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-xl focus:ring-2 focus:ring-purple-500 text-white transition-all outline-none`}
-                            placeholder="you@example.com" />
+                            placeholder="email@example.com" />
                         {errors.email && <p className="text-red-400 text-xs mt-1.5 px-1">{errors.email[0]}</p>}
                     </div>
 
@@ -77,7 +79,7 @@ export default function Register() {
                     </div>
 
                     <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg shadow-purple-900/20 transition-all active:scale-[0.98] mt-4">
-                        Sign Up
+                        Daftar
                     </button>
                 </form>
 
