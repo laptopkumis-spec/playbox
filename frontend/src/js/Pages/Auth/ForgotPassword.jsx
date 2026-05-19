@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../../api/axios';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -15,11 +15,12 @@ export default function ForgotPassword() {
         setError('');
         setMessage('');
         try {
-            await axios.post('/api/reset-password', {
+            const response = await api.post('/reset-password', {
                 email,
                 new_password: newPassword,
                 new_password_confirmation: newPasswordConfirm
             });
+            console.log(response.data);
             setMessage('Penggantian password berhasil! Mengalihkan ke halaman login...');
             setTimeout(() => {
                 navigate('/login', { state: { message: 'Password berhasil diubah, silakan login dengan sandi baru.' } });

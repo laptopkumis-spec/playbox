@@ -81,9 +81,69 @@ exports.logout = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
+  try {
+    const { email, new_password, new_password_confirmation } = req.body;
+
+    if (!email || !new_password || !new_password_confirmation) {
+      return res.status(422).json({ message: 'Email, password baru, dan konfirmasi password baru harus diisi' });
+    }
+
+    if (new_password !== new_password_confirmation) {
+      return res.status(422).json({ message: 'Password baru dan konfirmasi password tidak cocok' });
+    }
+
+    if (new_password.length < 8) {
+      return res.status(422).json({ message: 'Password baru minimal harus 8 karakter' });
+    }
+
+    const [users] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'Email tidak terdaftar' });
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
+
+    res.json({ message: 'Password berhasil diperbarui' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Gagal mengatur ulang password', error: error.message });
+  }
 };
 
 exports.changePassword = async (req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
+  try {
+    const { current_password, new_password, new_password_confirmation } = req.body;
+
+    if (!current_password || !new_password || !new_password_confirmation) {
+      return res.status(422).json({ message: 'Password saat ini, password baru, dan konfirmasi password baru harus diisi' });
+    }
+
+    if (new_password !== new_password_confirmation) {
+      return res.status(422).json({ message: 'Password baru dan konfirmasi password tidak cocok' });
+    }
+
+    if (new_password.length < 8) {
+      return res.status(422).json({ message: 'Password baru minimal harus 8 karakter' });
+    }
+
+    const [users] = await pool.query('SELECT password FROM users WHERE id = ?', [req.user.id]);
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+
+    const user = users[0];
+    const isMatch = await bcrypt.compare(current_password, user.password);
+    if (!isMatch) {
+      return res.status(422).json({ message: 'Password saat ini salah' });
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.user.id]);
+
+    res.json({ message: 'Password berhasil diubah' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Gagal mengubah password', error: error.message });
+  }
 };
