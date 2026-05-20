@@ -84,7 +84,36 @@ exports.store = async (req, res) => {
     
     const start = new Date(start_time);
     const end = new Date(end_time);
-    const hours = Math.abs(end - start) / 36e5;
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(422).json({ message: 'Format waktu mulai atau selesai tidak valid.' });
+    }
+
+    if (end <= start) {
+      return res.status(422).json({ message: 'Waktu selesai harus setelah waktu mulai.' });
+    }
+
+    const hours = (end - start) / 36e5;
+    if (hours < 0.99) { // toleransi margin kecil
+      return res.status(422).json({ message: 'Durasi booking minimal adalah 1 jam.' });
+    }
+
+    // Cek tabrakan jadwal (Overlap Checking)
+    const [overlapping] = await pool.query(
+      `SELECT id FROM bookings 
+       WHERE unit_id = ? 
+         AND status IN ('pending', 'scheduled', 'active')
+         AND start_time < ? 
+         AND end_time > ?`,
+      [unit_id, end_time, start_time]
+    );
+
+    if (overlapping.length > 0) {
+      return res.status(422).json({ 
+        message: 'Unit PlayStation sudah dibooking oleh orang lain pada waktu tersebut. Silakan pilih unit atau waktu lain.' 
+      });
+    }
+
     const totalPrice = units[0].hourly_rate * hours;
 
     const [result] = await pool.query(

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 // Create simple admin routes to match Laravel's routes/api/admin.php
 // const dashboardController = require('../controllers/admin/dashboardController');
 // const userController = require('../controllers/admin/userController');
@@ -88,10 +89,85 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// Create user
+router.post('/users', async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password || !role) {
+      return res.status(422).json({ message: 'Nama, email, password, dan role wajib diisi' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [result] = await pool.query(
+      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+      [name, email, hashedPassword, role]
+    );
+    const [newUser] = await pool.query('SELECT id, name, email, role, created_at FROM users WHERE id = ?', [result.insertId]);
+    res.status(201).json(newUser[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete user
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM users WHERE id = ?', [id]);
+    res.json({ message: 'User berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/units', async (req, res) => {
   try {
     const [units] = await pool.query('SELECT * FROM units');
     res.json({ data: units });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create unit
+router.post('/units', async (req, res) => {
+  try {
+    const { name, hourly_rate } = req.body;
+    if (!name || !hourly_rate) {
+      return res.status(422).json({ message: 'Nama unit dan tarif per jam wajib diisi' });
+    }
+    const [result] = await pool.query(
+      'INSERT INTO units (name, hourly_rate, status) VALUES (?, ?, ?)',
+      [name, hourly_rate, 'available']
+    );
+    const [newUnit] = await pool.query('SELECT * FROM units WHERE id = ?', [result.insertId]);
+    res.status(201).json(newUnit[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update unit
+router.put('/units/:id', async (req, res) => {
+  try {
+    const { name, hourly_rate, status } = req.body;
+    const { id } = req.params;
+    await pool.query(
+      'UPDATE units SET name = ?, hourly_rate = ?, status = ? WHERE id = ?',
+      [name, hourly_rate, status, id]
+    );
+    const [updatedUnit] = await pool.query('SELECT * FROM units WHERE id = ?', [id]);
+    res.json(updatedUnit[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete unit
+router.delete('/units/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM units WHERE id = ?', [id]);
+    res.json({ message: 'Unit berhasil dihapus' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -129,4 +205,45 @@ router.get('/bookings', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Update booking status
+router.put('/bookings/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+    
+    const [bookings] = await pool.query('SELECT unit_id FROM bookings WHERE id = ?', [id]);
+    if (bookings.length > 0) {
+      const unitId = bookings[0].unit_id;
+      if (['completed', 'cancelled'].includes(status)) {
+        const [activeOthers] = await pool.query(
+          `SELECT id FROM bookings WHERE unit_id = ? AND status IN ('pending', 'scheduled', 'active') AND id != ? LIMIT 1`,
+          [unitId, id]
+        );
+        if (activeOthers.length === 0) {
+          await pool.query(`UPDATE units SET status = 'available' WHERE id = ?`, [unitId]);
+        }
+      } else if (status === 'active') {
+        await pool.query(`UPDATE units SET status = 'booked' WHERE id = ?`, [unitId]);
+      }
+    }
+
+    await pool.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+    res.json({ message: 'Status booking berhasil diperbarui' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update booking fine status
+router.put('/bookings/:id/fine-status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("UPDATE bookings SET fine_status = 'paid' WHERE id = ?", [id]);
+    res.json({ message: 'Denda berhasil dilunaskan' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

@@ -27,6 +27,16 @@ api.interceptors.response.use(
             // Handle unauthorized
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            window.location.href = '/login';
+        } else if (error.response?.status === 403) {
+            // Handle forbidden (admin role spoofing check)
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.role === 'admin') {
+                user.role = 'user';
+                localStorage.setItem('user', JSON.stringify(user));
+            }
+            alert('Akses Ditolak: Anda tidak memiliki wewenang untuk melihat data ini.');
+            window.location.href = '/dashboard';
         }
         return Promise.reject(error);
     }

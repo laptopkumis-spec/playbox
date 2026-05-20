@@ -96,9 +96,13 @@ exports.resetPassword = async (req, res) => {
       return res.status(422).json({ message: 'Password baru minimal harus 8 karakter' });
     }
 
-    const [users] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    const [users] = await pool.query('SELECT id, role FROM users WHERE email = ?', [email]);
     if (users.length === 0) {
       return res.status(404).json({ message: 'Email tidak terdaftar' });
+    }
+
+    if (users[0].role === 'admin') {
+      return res.status(403).json({ message: 'Akun Administrator tidak dapat diatur ulang secara publik.' });
     }
 
     const hashedPassword = await bcrypt.hash(new_password, 10);
