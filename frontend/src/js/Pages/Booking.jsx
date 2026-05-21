@@ -166,14 +166,15 @@ export default function Booking() {
                                             </div>
                                             <p className="text-purple-400 font-black mb-3 sm:mb-4 text-base sm:text-lg">Rp {unit.hourly_rate.toLocaleString()}/jam</p>
                                             <p className="text-xs sm:text-sm text-gray-400">{unit.description || 'Kondisi prima, siap dimainkan kapan saja.'}</p>
+
+                                            <div className="mt-8 flex justify-end">
+                                                <button disabled={!selectedUnit} onClick={handleNext} className="w-full sm:w-auto bg-purple-700 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-purple-800 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+                                                    Lanjut
+                                                </button>
+                                            </div>
                                         </div>
                                     );
                                 })}
-                            </div>
-                            <div className="mt-8 flex justify-end">
-                                <button disabled={!selectedUnit} onClick={handleNext} className="w-full sm:w-auto bg-purple-700 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-purple-800 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
-                                    Lanjut
-                                </button>
                             </div>
                         </motion.div>
                     )}

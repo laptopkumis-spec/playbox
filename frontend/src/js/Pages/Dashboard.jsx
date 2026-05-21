@@ -228,14 +228,14 @@ export default function Dashboard() {
                                         </td>
                                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                                             {booking.status === 'active' ? (
-                                                <CountdownTimer endTime={booking.end_time} />
+                                                <CountdownTimer endTime={booking.end_time} variant="active" />
                                             ) : booking.payment?.status === 'pending' && booking.payment?.payment_method === 'qris' ? (
-                                                <div className="flex flex-col">
-                                                    <span className="text-[9px] text-yellow-500 font-bold uppercase">Batas Bayar:</span>
-                                                    <CountdownTimer endTime={booking.payment.expires_at} />
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[9px] text-amber-500 font-bold uppercase tracking-wider">Batas Bayar</span>
+                                                    <CountdownTimer endTime={booking.payment.expires_at} variant="payment" />
                                                 </div>
                                             ) : (
-                                                <span className="text-[10px] text-gray-500">-</span>
+                                                <span className="text-[10px] text-gray-600">—</span>
                                             )}
                                         </td>
                                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
