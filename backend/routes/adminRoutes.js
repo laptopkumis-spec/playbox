@@ -89,13 +89,34 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// Create user
+// Create user — admin only, but role must be explicitly whitelisted
 router.post('/users', async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
     if (!name || !email || !password || !role) {
       return res.status(422).json({ message: 'Nama, email, password, dan role wajib diisi' });
     }
+
+    // Whitelist allowed roles — prevent privilege escalation via API
+    const ALLOWED_ROLES = ['user', 'admin'];
+    if (!ALLOWED_ROLES.includes(role)) {
+      return res.status(422).json({ message: `Role tidak valid. Pilihan: ${ALLOWED_ROLES.join(', ')}` });
+    }
+
+    // Prevent creating a second admin unless explicitly needed
+    // (remove this block if multiple admins are intentional)
+    if (role === 'admin') {
+      const [existingAdmins] = await pool.query("SELECT COUNT(id) as count FROM users WHERE role = 'admin'");
+      if (existingAdmins[0].count >= 1) {
+        return res.status(403).json({ message: 'Hanya boleh ada satu akun admin.' });
+      }
+    }
+
+    const [existingEmail] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (existingEmail.length > 0) {
+      return res.status(422).json({ message: 'Email sudah terdaftar.' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await pool.query(
       'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
@@ -108,11 +129,27 @@ router.post('/users', async (req, res) => {
   }
 });
 
-// Delete user
+// Delete user — cannot delete self or other admins
 router.delete('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM users WHERE id = ?', [id]);
+    const targetId = parseInt(id, 10);
+
+    // Prevent admin from deleting their own account
+    if (targetId === req.user.id) {
+      return res.status(403).json({ message: 'Tidak dapat menghapus akun Anda sendiri.' });
+    }
+
+    // Prevent deleting other admin accounts
+    const [target] = await pool.query('SELECT role FROM users WHERE id = ?', [targetId]);
+    if (target.length === 0) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+    if (target[0].role === 'admin') {
+      return res.status(403).json({ message: 'Akun admin tidak dapat dihapus melalui panel ini.' });
+    }
+
+    await pool.query('DELETE FROM users WHERE id = ?', [targetId]);
     res.json({ message: 'User berhasil dihapus' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -177,30 +214,51 @@ router.get('/bookings', async (req, res) => {
   try {
     const [bookings] = await pool.query(`
       SELECT b.*, 
-             u.name as unit_name, 
-             users.name as user_name,
-             p.id as payment_id, p.amount as payment_amount, p.status as payment_status, p.payment_method, p.created_at as payment_created_at
+             u.id as unit_id_fk, u.name as unit_name, u.status as unit_status,
+             usr.id as user_id_fk, usr.name as user_name, usr.email as user_email,
+             p.id as payment_id, p.amount as payment_amount, p.status as payment_status, 
+             p.payment_method, p.created_at as payment_created_at
       FROM bookings b 
       LEFT JOIN units u ON b.unit_id = u.id 
-      LEFT JOIN users ON b.user_id = users.id 
+      LEFT JOIN users usr ON b.user_id = usr.id 
       LEFT JOIN payments p ON b.id = p.booking_id
       ORDER BY b.created_at DESC
     `);
     
-    const formattedBookings = bookings.map(b => ({
-      ...b,
-      user: { name: b.user_name },
-      unit: { name: b.unit_name },
+    // Transform to nested structure expected by frontend
+    const formatted = bookings.map(b => ({
+      id: b.id,
+      user_id: b.user_id,
+      unit_id: b.unit_id,
+      start_time: b.start_time,
+      end_time: b.end_time,
+      status: b.status,
+      total_price: b.total_price,
+      total_fines: b.total_fines,
+      fine_status: b.fine_status,
+      is_hidden_by_user: b.is_hidden_by_user,
+      created_at: b.created_at,
+      updated_at: b.updated_at,
+      user: b.user_name ? {
+        id: b.user_id_fk,
+        name: b.user_name,
+        email: b.user_email,
+      } : null,
+      unit: b.unit_name ? {
+        id: b.unit_id_fk,
+        name: b.unit_name,
+        status: b.unit_status,
+      } : null,
       payment: b.payment_id ? {
         id: b.payment_id,
         amount: b.payment_amount,
         status: b.payment_status,
         payment_method: b.payment_method,
-        created_at: b.payment_created_at
-      } : null
+        created_at: b.payment_created_at,
+      } : null,
     }));
     
-    res.json({ data: formattedBookings });
+    res.json({ data: formatted });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

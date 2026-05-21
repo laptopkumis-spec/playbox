@@ -53,16 +53,47 @@ exports.index = async (req, res) => {
     }
 
     const [bookings] = await pool.query(
-      `SELECT b.*, u.name as unit_name, p.status as payment_status, p.payment_method 
+      `SELECT b.*, 
+              u.id as unit_id_fk, u.name as unit_name, u.status as unit_status, u.hourly_rate as unit_rate,
+              p.id as payment_id, p.status as payment_status, p.payment_method, p.amount as payment_amount, p.created_at as payment_created_at
        FROM bookings b 
        LEFT JOIN units u ON b.unit_id = u.id 
        LEFT JOIN payments p ON b.id = p.booking_id 
-       WHERE b.user_id = ? AND b.is_hidden_by_user = false 
+       WHERE b.user_id = ? AND b.is_hidden_by_user = 0
        ORDER BY b.created_at DESC`,
       [userId]
     );
 
-    res.json({ data: bookings });
+    // Transform to nested structure expected by frontend
+    const formatted = bookings.map(b => ({
+      id: b.id,
+      user_id: b.user_id,
+      unit_id: b.unit_id,
+      start_time: b.start_time,
+      end_time: b.end_time,
+      status: b.status,
+      is_hidden_by_user: b.is_hidden_by_user,
+      total_price: b.total_price,
+      total_fines: b.total_fines,
+      fine_status: b.fine_status,
+      created_at: b.created_at,
+      updated_at: b.updated_at,
+      unit: b.unit_name ? {
+        id: b.unit_id_fk,
+        name: b.unit_name,
+        status: b.unit_status,
+        hourly_rate: b.unit_rate,
+      } : null,
+      payment: b.payment_id ? {
+        id: b.payment_id,
+        status: b.payment_status,
+        payment_method: b.payment_method,
+        amount: b.payment_amount,
+        created_at: b.payment_created_at,
+      } : null,
+    }));
+
+    res.json({ data: formatted });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Failed to fetch bookings' });

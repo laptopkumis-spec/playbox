@@ -24,18 +24,13 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Handle unauthorized
+            // Token expired or invalid — clear session and redirect to login
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/login';
         } else if (error.response?.status === 403) {
-            // Handle forbidden (admin role spoofing check)
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            if (user.role === 'admin') {
-                user.role = 'user';
-                localStorage.setItem('user', JSON.stringify(user));
-            }
-            alert('Akses Ditolak: Anda tidak memiliki wewenang untuk melihat data ini.');
+            // Forbidden — user does not have permission for this resource.
+            // Do NOT attempt to modify role in localStorage; the server is the source of truth.
             window.location.href = '/dashboard';
         }
         return Promise.reject(error);

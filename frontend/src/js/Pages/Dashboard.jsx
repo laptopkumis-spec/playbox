@@ -11,6 +11,8 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [bookings, setBookings] = useState([]);
     const [successMsg, setSuccessMsg] = useState('');
+    const [errorMsg, setErrorMsg] = useState('');
+    const [cancellingId, setCancellingId] = useState(null); // tracks which booking is being cancelled
     const [stats, setStats] = useState({
         total_bookings: 0,
         active_bookings: 0,
@@ -78,21 +80,36 @@ export default function Dashboard() {
 
     const handleCancel = async (id) => {
         if (!window.confirm('Yakin ingin membatalkan booking ini?')) return;
+        setCancellingId(id);
+        setErrorMsg('');
         try {
             await api.put(`/bookings/${id}/cancel`);
+            setSuccessMsg('Booking berhasil dibatalkan.');
+            setTimeout(() => setSuccessMsg(''), 5000);
             fetchBookings();
         } catch (e) {
-            alert(e.response?.data?.message || 'Gagal membatalkan booking.');
+            const msg = e.response?.data?.message || 'Gagal membatalkan booking.';
+            // 429 = rate limited — show as persistent banner, not alert
+            if (e.response?.status === 429) {
+                setErrorMsg(msg);
+            } else {
+                setErrorMsg(msg);
+                setTimeout(() => setErrorMsg(''), 5000);
+            }
+        } finally {
+            setCancellingId(null);
         }
     };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Yakin ingin menghapus riwayat booking ini?')) return;
+        setErrorMsg('');
         try {
             await api.delete(`/bookings/${id}`);
             fetchBookings();
         } catch (e) {
-            alert(e.response?.data?.message || 'Gagal menghapus riwayat.');
+            setErrorMsg(e.response?.data?.message || 'Gagal menghapus riwayat.');
+            setTimeout(() => setErrorMsg(''), 5000);
         }
     };
 
@@ -112,6 +129,19 @@ export default function Dashboard() {
                 <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-2xl text-green-400 font-bold flex items-center justify-between shadow-sm text-sm sm:text-base">
                     <span>{successMsg}</span>
                     <button onClick={() => setSuccessMsg('')} className="text-green-600 hover:text-green-900 ml-4 text-xl">✕</button>
+                </div>
+            )}
+
+            {/* Error / Rate-limit Banner */}
+            {errorMsg && (
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-400 font-bold flex items-center justify-between shadow-sm text-sm sm:text-base">
+                    <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        <span>{errorMsg}</span>
+                    </div>
+                    <button onClick={() => setErrorMsg('')} className="text-red-600 hover:text-red-300 ml-4 text-xl shrink-0">✕</button>
                 </div>
             )}
             
@@ -220,7 +250,21 @@ export default function Dashboard() {
                                         <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
                                             <div className="flex justify-end gap-2">
                                                 {['pending', 'scheduled'].includes(booking.status) && (
-                                                    <button onClick={() => handleCancel(booking.id)} className="text-[10px] text-red-400 hover:text-red-300 font-bold bg-red-400/10 border border-red-400/20 px-2.5 py-1.5 rounded-lg transition">Batal</button>
+                                                    <button
+                                                        onClick={() => handleCancel(booking.id)}
+                                                        disabled={cancellingId === booking.id}
+                                                        className="text-[10px] text-red-400 hover:text-red-300 font-bold bg-red-400/10 border border-red-400/20 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                                    >
+                                                        {cancellingId === booking.id ? (
+                                                            <>
+                                                                <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                                </svg>
+                                                                Membatalkan...
+                                                            </>
+                                                        ) : 'Batal'}
+                                                    </button>
                                                 )}
                                                 {['completed', 'cancelled'].includes(booking.status) && (
                                                     <button onClick={() => handleDelete(booking.id)} className="text-[10px] text-gray-400 hover:text-gray-200 font-bold bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-lg transition">Hapus</button>

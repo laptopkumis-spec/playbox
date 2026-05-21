@@ -25,12 +25,22 @@ exports.register = async (req, res) => {
     const [newUser] = await pool.query('SELECT id, name, email, role FROM users WHERE id = ?', [result.insertId]);
     const user = newUser[0];
 
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+    // Sign token with minimal claims — role is re-verified from DB on each request
+    const token = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
 
     res.status(201).json({
       message: 'User registered successfully',
-      user: user,
-      access_token: token
+      user: {
+        id:    user.id,
+        name:  user.name,
+        email: user.email,
+        role:  user.role,
+      },
+      access_token: token,
     });
   } catch (error) {
     console.error(error);
@@ -46,31 +56,46 @@ exports.login = async (req, res) => {
       return res.status(422).json({ message: 'Email and password are required' });
     }
 
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    // Select only the fields we need — never SELECT *
+    const [users] = await pool.query(
+      'SELECT id, name, email, role, password FROM users WHERE email = ?',
+      [email]
+    );
+
+    // Use the same generic message for both "not found" and "wrong password"
+    // to prevent user enumeration attacks
     if (users.length === 0) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Email atau password salah.' });
     }
 
     const user = users[0];
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Email atau password salah.' });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+    // Sign token with minimal claims — role is re-verified from DB on each request
+    const token = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
 
-    // remove password from user object
-    delete user.password;
-
+    // Return only safe, non-sensitive fields
     res.json({
       message: 'Login successful',
-      user: user,
-      access_token: token
+      user: {
+        id:    user.id,
+        name:  user.name,
+        email: user.email,
+        role:  user.role,
+      },
+      access_token: token,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Login failed', error: error.message });
+    res.status(500).json({ message: 'Login failed. Please try again.' });
   }
 };
 
